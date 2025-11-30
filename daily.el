@@ -48,6 +48,18 @@ The file is named 'today_MM_DD_YYYY.org' with today's date."
 
       (find-file new-file-path))))
 
+(defun daily-open-today-file ()
+  "Open the file pointed to by the today.org symlink in daily-org-dir.
+If today.org does not exist, create a new daily file."
+  (interactive)
+  (let* ((today-org-path (expand-file-name "today.org" daily-org-dir))
+         (target-file (if (file-exists-p today-org-path)
+                          (expand-file-name (file-symlink-p today-org-path) daily-org-dir)
+                        nil)))
+    (if (and target-file (file-exists-p target-file))
+        (find-file target-file)
+      (daily-create-file daily-org-dir))))
+
 (defun daily-archive-current-file ()
   "Move the current buffer's file to the archive directory based on its creation date.
 The file will be moved to <archive>/YYYY/MM/ directory."
