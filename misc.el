@@ -49,3 +49,25 @@
       (insert (shell-command-to-string command)))
     (pop-to-buffer buf)))
 
+
+(defun insert-color-from-list ()
+  "Display colors and insert the selected color name into the current buffer.
+Calls `list-colors-display', and when RET is pressed on a color,
+inserts that color name into the buffer from which this function was called."
+  (interactive)
+  (let ((orig-buffer (current-buffer)))
+    (list-colors-display nil "*Select Color*" (lambda (color-name)
+						(kill-buffer "*Select Color*")
+						(pop-to-buffer orig-buffer)
+						(insert color-name)))))
+    ;; (pop-to-buffer "*Colors*")
+    ;; (local-set-key (kbd "RET")
+    ;;                (lambda ()
+    ;;                  (interactive)
+    ;;                  (let ((btn (button-at (point))))
+    ;;                    (if btn
+    ;;                        (let ((color (button-label btn)))
+    ;;                          (kill-buffer "*Colors*")
+    ;;                          (pop-to-buffer orig-buffer)
+    ;;                          (insert color))
+    ;;                      (user-error "No color at point")))))))

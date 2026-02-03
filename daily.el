@@ -95,5 +95,47 @@ The file will be moved to <archive>/YYYY/MM/ directory."
       ;; Close the buffer if the file was moved
       (kill-buffer (current-buffer)))))
 
+(defun daily-clear-today-file ()
+  "Clear clocked work time and archive completed TODO items in the today file.
+Removes all CLOCK entries and empty LOGBOOK drawers, then archives
+any entries that are in a done state."
+  (interactive)
+  (require 'org)
+  (let* ((today-org-path (expand-file-name "today.org" daily-org-dir))
+         (target-file (if (file-exists-p today-org-path)
+                          (expand-file-name (file-symlink-p today-org-path) daily-org-dir)
+                        nil)))
+    (unless (and target-file (file-exists-p target-file))
+      (user-error "Today file does not exist"))
+
+    (find-file target-file)
+
+    ;; Clear clocked time - remove CLOCK lines
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^[ \t]*CLOCK:.*\n" nil t)
+        (replace-match "")))
+
+    ;; Remove empty LOGBOOK drawers
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward ":LOGBOOK:[ \t]*\n[ \t]*:END:[ \t]*\n?" nil t)
+        (replace-match "")))
+
+    ;; Archive done items - collect positions first, then archive from bottom up
+    (let (done-positions)
+      (org-map-entries
+       (lambda ()
+         (when (org-entry-is-done-p)
+           (push (point-marker) done-positions)))
+       nil
+       'file)
+      ;; Archive from bottom to top to preserve positions
+      (dolist (pos done-positions)
+        (goto-char pos)
+        (org-archive-subtree)
+        (set-marker pos nil))
+      (message "Cleared clocks and archived %d done items" (length done-positions)))))
+
 (provide 'daily)
 ;;; daily.el ends here
